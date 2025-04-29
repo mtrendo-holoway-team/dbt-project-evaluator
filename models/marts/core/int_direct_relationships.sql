@@ -62,12 +62,7 @@ with
             (
                 all_graph_resources.resource_type = 'test'
                 and models.is_primary_relationship
-            ) as is_primary_test_relationship,
-            {{
-                dbt_utils.generate_surrogate_key(
-                    ["all_graph_resources.resource_id", "direct_parent_id"]
-                )
-            }} as unique_id
+            ) as is_primary_test_relationship
         from all_graph_resources
         left join
             direct_model_relationships as models
@@ -80,7 +75,13 @@ with
             on all_graph_resources.resource_id = metrics.resource_id
     ),
 
-    final as (select * from direct_relationships)
+    final as (
+        select
+            *,
+            {{ dbt_utils.generate_surrogate_key(["resource_id", "direct_parent_id"]) }}
+            as unique_id
+        from direct_relationships
+    )
 
 select *
 from final

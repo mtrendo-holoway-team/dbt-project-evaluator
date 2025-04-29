@@ -1,0 +1,41 @@
+name: Auto Increment Tag
+
+on:
+  push:
+    branches:
+      - main  # or whichever branch you want to watch
+
+jobs:
+  increment:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Get Latest Tag
+        id: get_latest_tag
+        run: |
+          git fetch --tags
+          tag=$(git describe --tags `git rev-list --tags --max-count=1`)
+          if [[ "$tag" == "" ]]; then
+            tag="1.0.0"
+          fi
+          echo "Latest Tag: $tag"
+
+          # Extract major.minor.patch components from tag
+          IFS='.' read -r -a parts <<< "$tag"
+          major=${parts[0]}
+          minor=${parts[1]}
+          patch=${parts[2]}
+
+          # Increment patch
+          new_patch=$((patch + 1))
+
+          # New tag
+          new_tag="$major.$minor.$new_patch"
+          git tag $new_tag
+
+          git push origin $new_tag
+          echo "New Tag: $new_tag"
